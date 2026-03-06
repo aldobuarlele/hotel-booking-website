@@ -11,6 +11,17 @@ A modern hotel booking management system with real-time chat support, overbookin
 
 The Hotel Booking System provides comprehensive reservation management with dual booking modes: Hard Booking for confirmed reservations and Real-time Soft Booking (Inquiry Chat) for customer inquiries. The system includes separate interfaces for customers and administrators with robust authentication and real-time communication capabilities.
 
+
+## Key Features
+
+- **Real-time Chat System**: Built on Supabase Realtime Channels for instant customer-administrator communication
+- **Overbooking Prevention Engine**: Conflict detection and validation for overlapping reservations
+- **Dynamic Room Management**: Complete CRUD operations for room inventory with pricing and availability tracking
+- **Secure Admin Dashboard**: Role-based authentication with client-side session management
+- **Dual Booking Modes**: Hard Booking (confirmed reservations) and Soft Booking (inquiry chat)
+- **Responsive UI**: Mobile-first design with Tailwind CSS and Shadcn components
+
+
 ## Architecture
 
 ```mermaid
@@ -45,14 +56,13 @@ graph TB
     AdminDashboard --> AdminUI[Admin UI<br/>Dashboard & Management]
 ```
 
-## Key Features
+## Getting Started
 
-- **Real-time Chat System**: Built on Supabase Realtime Channels for instant customer-administrator communication
-- **Overbooking Prevention Engine**: Conflict detection and validation for overlapping reservations
-- **Dynamic Room Management**: Complete CRUD operations for room inventory with pricing and availability tracking
-- **Secure Admin Dashboard**: Role-based authentication with client-side session management
-- **Dual Booking Modes**: Hard Booking (confirmed reservations) and Soft Booking (inquiry chat)
-- **Responsive UI**: Mobile-first design with Tailwind CSS and Shadcn components
+### Prerequisites
+
+- Node.js 18+ and npm/yarn/pnpm
+- Supabase account and project
+- PostgreSQL database (provided by Supabase)
 
 ## Tech Stack
 
@@ -66,13 +76,6 @@ graph TB
 | **Shadcn/ui** | Accessible component library | Latest |
 | **React** | UI library for component-based architecture | 18.2 |
 
-## Getting Started
-
-### Prerequisites
-
-- Node.js 18+ and npm/yarn/pnpm
-- Supabase account and project
-- PostgreSQL database (provided by Supabase)
 
 ### Installation
 
