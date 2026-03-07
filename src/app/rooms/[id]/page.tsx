@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { supabase } from '@/lib/supabase';
 import { BANK_ACCOUNT_NUMBER, DB_TABLES, DEFAULT_LOCALE, ROOM_STATUS } from '@/lib/config';
+import { toastError, toastSuccess, toastWarning, toastInfo } from '@/lib/toast';
 import { 
   Hotel, Star, MapPin, Calendar, Users, ArrowLeft, Loader2, Check, 
   User, Mail, Phone, CreditCard, MessageCircle, ChevronRight,
@@ -138,7 +139,7 @@ export default function RoomDetailPage() {
 
     // Validate form
     if (!bookingForm.guest_name || !bookingForm.guest_email || !bookingForm.check_in_date || !bookingForm.check_out_date) {
-      alert('Harap isi semua field wajib (nama, email, tanggal check-in/out)');
+      toastWarning('Harap isi semua field wajib (nama, email, tanggal check-in/out)');
       return;
     }
 
@@ -147,7 +148,7 @@ export default function RoomDetailPage() {
     const checkOut = new Date(bookingForm.check_out_date);
     
     if (checkOut <= checkIn) {
-      alert('Tanggal check-out harus setelah tanggal check-in.');
+      toastWarning('Tanggal check-out harus setelah tanggal check-in.');
       return;
     }
 
@@ -161,7 +162,7 @@ export default function RoomDetailPage() {
       );
 
       if (overlappingBookingsCount >= room.quota) {
-        alert(`Maaf, kamar ini sudah penuh pada tanggal tersebut. Sudah ada ${overlappingBookingsCount} booking yang overlap dengan kuota ${room.quota}.`);
+        toastError(`Maaf, kamar ini sudah penuh pada tanggal tersebut. Sudah ada ${overlappingBookingsCount} booking yang overlap dengan kuota ${room.quota}.`);
         setIsSubmitting(false);
         return;
       }
@@ -198,26 +199,22 @@ export default function RoomDetailPage() {
         check_out_date: '',
       });
 
-      alert(`
-        Booking berhasil dibuat!
-        
-        Detail Booking:
-        - Nomor Booking: ${accountNumber}
-        - Kamar: ${room.name}
-        - Tanggal: ${new Date(bookingForm.check_in_date).toLocaleDateString(DEFAULT_LOCALE)} - ${new Date(bookingForm.check_out_date).toLocaleDateString(DEFAULT_LOCALE)}
-        - Total: Rp ${totalPrice.toLocaleString(DEFAULT_LOCALE)}
-        
-        Silakan transfer ke:
-        ${BANK_ACCOUNT_NUMBER}
-        
-        Konfirmasi pembayaran akan diproses dalam 1x24 jam.
-      `);
+      toastSuccess(
+        `Booking berhasil dibuat!\n\n` +
+        `Detail Booking:\n` +
+        `- Nomor Booking: ${accountNumber}\n` +
+        `- Kamar: ${room.name}\n` +
+        `- Tanggal: ${new Date(bookingForm.check_in_date).toLocaleDateString(DEFAULT_LOCALE)} - ${new Date(bookingForm.check_out_date).toLocaleDateString(DEFAULT_LOCALE)}\n` +
+        `- Total: Rp ${totalPrice.toLocaleString(DEFAULT_LOCALE)}\n\n` +
+        `Silakan transfer ke:\n${BANK_ACCOUNT_NUMBER}\n\n` +
+        `Konfirmasi pembayaran akan diproses dalam 1x24 jam.`
+      );
 
       // Redirect to home
       router.push('/');
     } catch (error) {
       console.error('Error creating booking:', error);
-      alert('Gagal membuat booking. Silakan coba lagi.');
+      toastError('Gagal membuat booking. Silakan coba lagi.');
     } finally {
       setIsSubmitting(false);
     }
@@ -241,10 +238,10 @@ export default function RoomDetailPage() {
       // Show chat room
       setShowChatRoom(true);
       
-      alert('Kamar telah ditandai sebagai sementara dipesan. Silakan chat dengan admin untuk konfirmasi lebih lanjut.');
+      toastSuccess('Kamar telah ditandai sebagai sementara dipesan. Silakan chat dengan admin untuk konfirmasi lebih lanjut.');
     } catch (error) {
       console.error('Error updating room status:', error);
-      alert('Gagal memulai chat dengan admin. Silakan coba lagi.');
+      toastError('Gagal memulai chat dengan admin. Silakan coba lagi.');
     }
   };
 
