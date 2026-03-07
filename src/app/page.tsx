@@ -1,5 +1,6 @@
 'use client';
 
+import { DB_TABLES, DEFAULT_LOCALE, ROOM_STATUS } from '@/lib/config';
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -38,9 +39,9 @@ export default function HomePage() {
   const fetchRooms = async () => {
     try {
       const { data, error } = await supabase
-        .from('rooms')
+        .from(DB_TABLES.ROOMS)
         .select('*')
-        .eq('status', 'AVAILABLE')
+        .eq('status', ROOM_STATUS.AVAILABLE)
         .gt('quota', 0)
         .order('price', { ascending: true });
 
@@ -54,7 +55,7 @@ export default function HomePage() {
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('id-ID', {
+    return new Intl.NumberFormat(DEFAULT_LOCALE, {
       style: 'currency',
       currency: 'IDR',
       minimumFractionDigits: 0,

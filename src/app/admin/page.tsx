@@ -8,6 +8,8 @@ import { DollarSign, Hotel, Calendar, TrendingUp, Users, CreditCard, Loader2, Fi
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 import { BANK_ACCOUNT_NUMBER } from '@/lib/config';
+import { DB_TABLES } from '@/lib/config';
+import { DEFAULT_LOCALE } from '@/lib/config';
 
 type DashboardStats = {
   totalRevenue: number;
@@ -33,14 +35,14 @@ export default function AdminDashboard() {
     try {
       // Fetch rooms
       const { data: rooms, error: roomsError } = await supabase
-        .from('rooms')
+        .from(DB_TABLES.ROOMS)
         .select('*');
       
       if (roomsError) throw roomsError;
 
       // Fetch bookings
       const { data: bookings, error: bookingsError } = await supabase
-        .from('bookings')
+        .from(DB_TABLES.BOOKINGS)
         .select('*');
       
       if (bookingsError) throw bookingsError;
@@ -186,7 +188,7 @@ export default function AdminDashboard() {
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('id-ID', {
+    return new Intl.NumberFormat(DEFAULT_LOCALE, {
       style: 'currency',
       currency: 'IDR',
       minimumFractionDigits: 0,
@@ -197,7 +199,7 @@ export default function AdminDashboard() {
     try {
       // Fetch all bookings with room details
       const { data: bookings, error } = await supabase
-        .from('bookings')
+        .from(DB_TABLES.BOOKINGS)
         .select(`
           *,
           rooms (
@@ -227,13 +229,13 @@ export default function AdminDashboard() {
 
       const rows = bookings?.map(booking => [
         booking.id,
-        new Date(booking.created_at).toLocaleDateString('id-ID'),
+        new Date(booking.created_at).toLocaleDateString(DEFAULT_LOCALE),
         booking.guest_name,
         booking.guest_email,
         booking.guest_phone || '',
         booking.rooms?.name || 'Tidak diketahui',
-        new Date(booking.check_in_date).toLocaleDateString('id-ID'),
-        new Date(booking.check_out_date).toLocaleDateString('id-ID'),
+        new Date(booking.check_in_date).toLocaleDateString(DEFAULT_LOCALE),
+        new Date(booking.check_out_date).toLocaleDateString(DEFAULT_LOCALE),
         Math.ceil((new Date(booking.check_out_date).getTime() - new Date(booking.check_in_date).getTime()) / (1000 * 60 * 60 * 24)),
         formatCurrency(booking.total_price),
         booking.payment_status,

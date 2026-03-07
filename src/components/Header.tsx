@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { HOTEL_NAME } from '@/lib/config';
 import { Button } from '@/components/ui/button';
 import { Hotel } from 'lucide-react';
 
@@ -12,7 +13,7 @@ export default function Header() {
             <div className="bg-blue-600 p-2 rounded-lg">
               <Hotel className="h-6 w-6 text-white" />
             </div>
-            <span className="text-xl font-bold">LuxuryStay</span>
+            <span className="text-xl font-bold">{HOTEL_NAME}</span>
           </Link>
 
           {/* Admin Login Button */}

@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { getOrCreateAnonymousUserId } from '@/lib/utils';
+import { DEFAULT_LOCALE, DB_TABLES, ERROR_MESSAGES } from '@/lib/config';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -41,7 +42,7 @@ export default function ChatRoom({ roomId, roomName, onClose }: ChatRoomProps) {
         {
           event: 'INSERT',
           schema: 'public',
-          table: 'chat_messages',
+          table: DB_TABLES.CHAT_MESSAGES,
           filter: `room_id=eq.${roomId}`,
         },
         (payload) => {
@@ -64,7 +65,7 @@ export default function ChatRoom({ roomId, roomName, onClose }: ChatRoomProps) {
   const fetchMessages = async () => {
     try {
       const { data, error } = await supabase
-        .from('chat_messages')
+        .from(DB_TABLES.CHAT_MESSAGES)
         .select('*')
         .eq('room_id', roomId)
         .order('created_at', { ascending: true });
@@ -87,7 +88,7 @@ export default function ChatRoom({ roomId, roomName, onClose }: ChatRoomProps) {
 
     try {
       const { error } = await supabase
-        .from('chat_messages')
+        .from(DB_TABLES.CHAT_MESSAGES)
         .insert({
           room_id: roomId,
           user_id: userId,
@@ -97,7 +98,7 @@ export default function ChatRoom({ roomId, roomName, onClose }: ChatRoomProps) {
       if (error) throw error;
     } catch (error) {
       console.error('Error sending message:', error);
-      alert('Gagal mengirim pesan. Silakan coba lagi.');
+      alert(ERROR_MESSAGES.SEND_MESSAGE_FAILED);
       setNewMessage(messageToSend); // Restore the message
     } finally {
       setSending(false);
@@ -110,7 +111,7 @@ export default function ChatRoom({ roomId, roomName, onClose }: ChatRoomProps) {
 
   const formatTime = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+    return date.toLocaleTimeString(DEFAULT_LOCALE, { hour: '2-digit', minute: '2-digit' });
   };
 
   if (loading) {

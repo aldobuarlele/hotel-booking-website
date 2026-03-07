@@ -1,5 +1,6 @@
 'use client';
 
+import { DB_TABLES, ROOM_STATUS, USER_ROLES } from '@/lib/config';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
@@ -44,7 +45,7 @@ export default function AdminChatsPage() {
         {
           event: 'INSERT',
           schema: 'public',
-          table: 'chat_messages',
+          table: DB_TABLES.CHAT_MESSAGES,
         },
         () => {
           fetchChatSessions();
@@ -63,7 +64,7 @@ export default function AdminChatsPage() {
 
       // Fetch all chat messages with room information
       const { data: messages, error: messagesError } = await supabase
-        .from('chat_messages')
+        .from(DB_TABLES.CHAT_MESSAGES)
         .select(`
           *,
           rooms (
@@ -86,11 +87,11 @@ export default function AdminChatsPage() {
             room_id: msg.room_id,
             user_id: msg.user_id,
             room_name: msg.rooms?.name || `Room #${msg.room_id}`,
-            room_status: msg.rooms?.status || 'TEMPORARILY_RESERVED',
+            room_status: msg.rooms?.status || ROOM_STATUS.TEMPORARILY_RESERVED,
             last_message: msg.message,
             last_message_time: msg.created_at,
             message_count: 1,
-            is_admin_responded: msg.user_id === 'admin',
+            is_admin_responded: msg.user_id === USER_ROLES.ADMIN,
           });
         } else {
           const session = sessionsMap.get(key)!;
@@ -99,7 +100,7 @@ export default function AdminChatsPage() {
           if (new Date(msg.created_at) > new Date(session.last_message_time)) {
             session.last_message = msg.message;
             session.last_message_time = msg.created_at;
-            session.is_admin_responded = msg.user_id === 'admin';
+            session.is_admin_responded = msg.user_id === USER_ROLES.ADMIN;
           }
         }
       });
@@ -143,8 +144,8 @@ export default function AdminChatsPage() {
     session.last_message.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const activeSessions = filteredSessions.filter(s => s.room_status === 'TEMPORARILY_RESERVED');
-  const inactiveSessions = filteredSessions.filter(s => s.room_status !== 'TEMPORARILY_RESERVED');
+  const activeSessions = filteredSessions.filter(s => s.room_status === ROOM_STATUS.TEMPORARILY_RESERVED);
+  const inactiveSessions = filteredSessions.filter(s => s.room_status !== ROOM_STATUS.TEMPORARILY_RESERVED);
 
   if (loading) {
     return (
@@ -260,8 +261,8 @@ export default function AdminChatsPage() {
                     <div>
                       <CardTitle className="text-lg">{session.room_name}</CardTitle>
                       <div className="flex items-center gap-2 mt-1">
-                        <Badge variant={session.room_status === 'TEMPORARILY_RESERVED' ? 'secondary' : 'outline'}>
-                          {session.room_status === 'TEMPORARILY_RESERVED' ? 'Sementara Dipesan' : session.room_status}
+                        <Badge variant={session.room_status === ROOM_STATUS.TEMPORARILY_RESERVED ? 'secondary' : 'outline'}>
+                          {session.room_status === ROOM_STATUS.TEMPORARILY_RESERVED ? 'Sementara Dipesan' : session.room_status}
                         </Badge>
                         {!session.is_admin_responded && (
                           <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
@@ -333,7 +334,7 @@ export default function AdminChatsPage() {
                       <CardTitle className="text-lg">{session.room_name}</CardTitle>
                       <div className="flex items-center gap-2 mt-1">
                         <Badge variant="outline">
-                          {session.room_status === 'AVAILABLE' ? 'Tersedia' : 'Inquiry Only'}
+                          {session.room_status === ROOM_STATUS.AVAILABLE ? 'Tersedia' : 'Inquiry Only'}
                         </Badge>
                       </div>
                     </div>

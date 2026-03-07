@@ -1,5 +1,8 @@
 'use client';
 
+import { DB_TABLES } from '@/lib/config';
+import { DEFAULT_LOCALE } from '@/lib/config';
+import { ROOM_STATUS } from '@/lib/config';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 
@@ -13,7 +16,7 @@ export default function TestDBPage() {
       try {
         // Test Supabase connection by querying rooms table
         const { data: roomsData, error } = await supabase
-          .from('rooms')
+          .from(DB_TABLES.ROOMS)
           .select('*')
           .limit(5);
 
@@ -114,11 +117,11 @@ export default function TestDBPage() {
                           <td className="py-3 px-4 border-b">{room.id}</td>
                           <td className="py-3 px-4 border-b">{room.name}</td>
                           <td className="py-3 px-4 border-b">{room.quota}</td>
-                          <td className="py-3 px-4 border-b">{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(room.price)}</td>
+                          <td className="py-3 px-4 border-b">{new Intl.NumberFormat(DEFAULT_LOCALE, { style: 'currency', currency: 'IDR' }).format(room.price)}</td>
                           <td className="py-3 px-4 border-b">
                             <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                              room.status === 'AVAILABLE' ? 'bg-green-100 text-green-800' :
-                              room.status === 'TEMPORARILY_RESERVED' ? 'bg-yellow-100 text-yellow-800' :
+                              room.status === ROOM_STATUS.AVAILABLE ? 'bg-green-100 text-green-800' :
+                              room.status === ROOM_STATUS.TEMPORARILY_RESERVED ? 'bg-yellow-100 text-yellow-800' :
                               'bg-blue-100 text-blue-800'
                             }`}>
                               {room.status}

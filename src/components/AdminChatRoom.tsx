@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
+import { DEFAULT_LOCALE, DB_TABLES, ROOM_STATUS, USER_ROLES, ERROR_MESSAGES, SUCCESS_MESSAGES, UI_LABELS } from '@/lib/config';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -34,7 +35,7 @@ export default function AdminChatRoom({ roomId, userId, roomName, onClose, onRoo
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
-  const [roomStatus, setRoomStatus] = useState<'AVAILABLE' | 'TEMPORARILY_RESERVED' | 'INQUIRY_ONLY'>('TEMPORARILY_RESERVED');
+  const [roomStatus, setRoomStatus] = useState<'AVAILABLE' | 'TEMPORARILY_RESERVED' | 'INQUIRY_ONLY'>(ROOM_STATUS.TEMPORARILY_RESERVED);
   const [releasing, setReleasing] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -51,7 +52,7 @@ export default function AdminChatRoom({ roomId, userId, roomName, onClose, onRoo
         {
           event: 'INSERT',
           schema: 'public',
-          table: 'chat_messages',
+          table: DB_TABLES.CHAT_MESSAGES,
           filter: `room_id=eq.${roomId}`,
         },
         (payload) => {
@@ -74,7 +75,7 @@ export default function AdminChatRoom({ roomId, userId, roomName, onClose, onRoo
   const fetchMessages = async () => {
     try {
       const { data, error } = await supabase
-        .from('chat_messages')
+        .from(DB_TABLES.CHAT_MESSAGES)
         .select('*')
         .eq('room_id', roomId)
         .order('created_at', { ascending: true });
@@ -91,7 +92,7 @@ export default function AdminChatRoom({ roomId, userId, roomName, onClose, onRoo
   const fetchRoomStatus = async () => {
     try {
       const { data, error } = await supabase
-        .from('rooms')
+        .from(DB_TABLES.ROOMS)
         .select('status')
         .eq('id', roomId)
         .single();
@@ -112,17 +113,17 @@ export default function AdminChatRoom({ roomId, userId, roomName, onClose, onRoo
 
     try {
       const { error } = await supabase
-        .from('chat_messages')
+        .from(DB_TABLES.CHAT_MESSAGES)
         .insert({
           room_id: roomId,
-          user_id: 'admin',
+          user_id: USER_ROLES.ADMIN,
           message: messageToSend,
         });
 
       if (error) throw error;
     } catch (error) {
       console.error('Error sending message:', error);
-      alert('Gagal mengirim pesan. Silakan coba lagi.');
+      alert(ERROR_MESSAGES.SEND_MESSAGE_FAILED);
       setNewMessage(messageToSend); // Restore the message
     } finally {
       setSending(false);
@@ -138,19 +139,19 @@ export default function AdminChatRoom({ roomId, userId, roomName, onClose, onRoo
     try {
       // Update room status to AVAILABLE
       const { error } = await supabase
-        .from('rooms')
-        .update({ status: 'AVAILABLE' })
+        .from(DB_TABLES.ROOMS)
+        .update({ status: ROOM_STATUS.AVAILABLE })
         .eq('id', roomId);
 
       if (error) throw error;
 
-      setRoomStatus('AVAILABLE');
+      setRoomStatus(ROOM_STATUS.AVAILABLE);
       onRoomReleased(roomId);
       
-      alert('Kamar berhasil dilepas dan sekarang tersedia untuk booking.');
+      alert(SUCCESS_MESSAGES.ROOM_RELEASED);
     } catch (error) {
       console.error('Error releasing room:', error);
-      alert('Gagal melepas kamar. Silakan coba lagi.');
+      alert(ERROR_MESSAGES.RELEASE_ROOM_FAILED);
     } finally {
       setReleasing(false);
     }
@@ -162,12 +163,12 @@ export default function AdminChatRoom({ roomId, userId, roomName, onClose, onRoo
 
   const formatTime = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+    return date.toLocaleTimeString(DEFAULT_LOCALE, { hour: '2-digit', minute: '2-digit' });
   };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('id-ID', { 
+    return date.toLocaleDateString(DEFAULT_LOCALE, { 
       day: 'numeric', 
       month: 'long', 
       year: 'numeric' 
@@ -203,14 +204,14 @@ export default function AdminChatRoom({ roomId, userId, roomName, onClose, onRoo
               <CardTitle className="text-lg">Chat Room - {roomName}</CardTitle>
               <div className="flex items-center gap-2 mt-1">
                 <div className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  roomStatus === 'TEMPORARILY_RESERVED' 
+                  roomStatus === ROOM_STATUS.TEMPORARILY_RESERVED 
                     ? 'bg-yellow-100 text-yellow-800' 
-                    : roomStatus === 'AVAILABLE'
+                    : roomStatus === ROOM_STATUS.AVAILABLE
                     ? 'bg-green-100 text-green-800'
                     : 'bg-gray-100 text-gray-800'
                 }`}>
-                  {roomStatus === 'TEMPORARILY_RESERVED' ? 'Sementara Dipesan' : 
-                   roomStatus === 'AVAILABLE' ? 'Tersedia' : 'Inquiry Only'}
+                  {roomStatus === ROOM_STATUS.TEMPORARILY_RESERVED ? 'Sementara Dipesan' : 
+                   roomStatus === ROOM_STATUS.AVAILABLE ? 'Tersedia' : 'Inquiry Only'}
                 </div>
                 <span className="text-sm text-gray-500">
                   User ID: {userId.substring(0, 8)}...
@@ -238,7 +239,7 @@ export default function AdminChatRoom({ roomId, userId, roomName, onClose, onRoo
               </div>
             ) : (
               messages.map((msg) => {
-                const isAdmin = msg.user_id === 'admin';
+                const isAdmin = msg.user_id === USER_ROLES.ADMIN;
                 return (
                   <div
                     key={msg.id}
@@ -307,7 +308,7 @@ export default function AdminChatRoom({ roomId, userId, roomName, onClose, onRoo
           <div className="border-t pt-4">
             <div className="flex items-center justify-between">
               <div className="text-sm text-gray-600">
-                {roomStatus === 'TEMPORARILY_RESERVED' ? (
+                {roomStatus === ROOM_STATUS.TEMPORARILY_RESERVED ? (
                   <div className="flex items-center gap-2">
                     <AlertCircle className="h-4 w-4 text-yellow-500" />
                     <span>Kamar sementara dipesan oleh customer ini.</span>
@@ -321,20 +322,20 @@ export default function AdminChatRoom({ roomId, userId, roomName, onClose, onRoo
               </div>
               <Button
                 onClick={releaseRoom}
-                disabled={releasing || roomStatus === 'AVAILABLE'}
-                variant={roomStatus === 'TEMPORARILY_RESERVED' ? 'default' : 'outline'}
+                disabled={releasing || roomStatus === ROOM_STATUS.AVAILABLE}
+                variant={roomStatus === ROOM_STATUS.TEMPORARILY_RESERVED ? 'default' : 'outline'}
                 className={`${
-                  roomStatus === 'TEMPORARILY_RESERVED' 
+                  roomStatus === ROOM_STATUS.TEMPORARILY_RESERVED 
                     ? 'bg-green-600 hover:bg-green-700' 
                     : ''
                 }`}
               >
                 {releasing ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : roomStatus === 'TEMPORARILY_RESERVED' ? (
+                ) : roomStatus === ROOM_STATUS.TEMPORARILY_RESERVED ? (
                   <CheckCircle className="mr-2 h-4 w-4" />
                 ) : null}
-                {roomStatus === 'TEMPORARILY_RESERVED' 
+                {roomStatus === ROOM_STATUS.TEMPORARILY_RESERVED 
                   ? 'Selesaikan Chat & Bebaskan Kamar' 
                   : 'Kamar Sudah Tersedia'}
               </Button>

@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { supabase } from '@/lib/supabase';
 import { Hotel, Plus, Edit, Trash2, Upload, Image as ImageIcon, Loader2 } from 'lucide-react';
-import { MAX_FILE_SIZE_BYTES, VALID_FILE_TYPES, MAX_FILE_SIZE_MB } from '@/lib/config';
+import { MAX_FILE_SIZE_BYTES, VALID_FILE_TYPES, MAX_FILE_SIZE_MB, DB_TABLES, DEFAULT_LOCALE, ROOM_STATUS, SUPABASE_BUCKETS } from '@/lib/config';
 
 type Room = {
   id: number;
@@ -53,7 +53,7 @@ export default function RoomManagementPage() {
   const fetchRooms = async () => {
     try {
       const { data, error } = await supabase
-        .from('rooms')
+        .from(DB_TABLES.ROOMS)
         .select('*')
         .order('created_at', { ascending: false });
 
@@ -185,7 +185,7 @@ export default function RoomManagementPage() {
         console.log('Uploading file:', filePath, file.type, file.size);
         
         const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('room-photos')
+          .from(SUPABASE_BUCKETS.ROOM_PHOTOS)
           .upload(filePath, file, {
             cacheControl: '3600',
             upsert: false
@@ -200,7 +200,7 @@ export default function RoomManagementPage() {
 
         // Get public URL
         const { data: urlData } = supabase.storage
-          .from('room-photos')
+          .from(SUPABASE_BUCKETS.ROOM_PHOTOS)
           .getPublicUrl(filePath);
 
         console.log('Public URL:', urlData);
@@ -213,7 +213,7 @@ export default function RoomManagementPage() {
         price: parseFloat(formData.price),
         quota: parseInt(formData.quota),
         photo_path: photoPath,
-        status: 'AVAILABLE' as const,
+        status: ROOM_STATUS.AVAILABLE,
       };
 
       console.log('Saving room data:', roomData);
@@ -221,7 +221,7 @@ export default function RoomManagementPage() {
       if (isEditing && currentRoom) {
         // Update existing room
         const { data, error } = await supabase
-          .from('rooms')
+          .from(DB_TABLES.ROOMS)
           .update(roomData)
           .eq('id', currentRoom.id)
           .select();
@@ -231,7 +231,7 @@ export default function RoomManagementPage() {
       } else {
         // Create new room
         const { data, error } = await supabase
-          .from('rooms')
+          .from(DB_TABLES.ROOMS)
           .insert(roomData)
           .select();
 
@@ -265,7 +265,7 @@ export default function RoomManagementPage() {
 
     try {
       const { error } = await supabase
-        .from('rooms')
+        .from(DB_TABLES.ROOMS)
         .delete()
         .eq('id', roomId);
 
@@ -280,7 +280,7 @@ export default function RoomManagementPage() {
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('id-ID', {
+    return new Intl.NumberFormat(DEFAULT_LOCALE, {
       style: 'currency',
       currency: 'IDR',
       minimumFractionDigits: 0,
@@ -466,14 +466,14 @@ export default function RoomManagementPage() {
                       <td className="py-4 px-4">{room.quota}</td>
                       <td className="py-4 px-4">
                         <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                          room.status === 'AVAILABLE' 
+                          room.status === ROOM_STATUS.AVAILABLE 
                             ? 'bg-green-100 text-green-800' 
-                            : room.status === 'TEMPORARILY_RESERVED'
+                            : room.status === ROOM_STATUS.TEMPORARILY_RESERVED
                             ? 'bg-yellow-100 text-yellow-800'
                             : 'bg-blue-100 text-blue-800'
                         }`}>
-                          {room.status === 'AVAILABLE' ? 'Tersedia' : 
-                           room.status === 'TEMPORARILY_RESERVED' ? 'Sementara Dipesan' : 'Hanya Inquiry'}
+                          {room.status === ROOM_STATUS.AVAILABLE ? 'Tersedia' : 
+                           room.status === ROOM_STATUS.TEMPORARILY_RESERVED ? 'Sementara Dipesan' : 'Hanya Inquiry'}
                         </span>
                       </td>
                       <td className="py-4 px-4">

@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { supabase } from '@/lib/supabase';
-import { BANK_ACCOUNT_NUMBER } from '@/lib/config';
+import { BANK_ACCOUNT_NUMBER, DB_TABLES, DEFAULT_LOCALE, ROOM_STATUS } from '@/lib/config';
 import { 
   Hotel, Star, MapPin, Calendar, Users, ArrowLeft, Loader2, Check, 
   User, Mail, Phone, CreditCard, MessageCircle, ChevronRight,
@@ -77,7 +77,7 @@ export default function RoomDetailPage() {
   const fetchRoom = async () => {
     try {
       const { data, error } = await supabase
-        .from('rooms')
+        .from(DB_TABLES.ROOMS)
         .select('*')
         .eq('id', roomId)
         .single();
@@ -120,7 +120,7 @@ export default function RoomDetailPage() {
     
     try {
       const { data, error } = await supabase
-        .from('bookings')
+        .from(DB_TABLES.BOOKINGS)
         .select('id')
         .eq('room_id', roomId)
         .or(`and(check_in_date.lte.${checkOutDate},check_out_date.gte.${checkInDate})`);
@@ -183,7 +183,7 @@ export default function RoomDetailPage() {
       };
 
       const { error } = await supabase
-        .from('bookings')
+        .from(DB_TABLES.BOOKINGS)
         .insert(bookingData);
 
       if (error) throw error;
@@ -204,8 +204,8 @@ export default function RoomDetailPage() {
         Detail Booking:
         - Nomor Booking: ${accountNumber}
         - Kamar: ${room.name}
-        - Tanggal: ${new Date(bookingForm.check_in_date).toLocaleDateString('id-ID')} - ${new Date(bookingForm.check_out_date).toLocaleDateString('id-ID')}
-        - Total: Rp ${totalPrice.toLocaleString('id-ID')}
+        - Tanggal: ${new Date(bookingForm.check_in_date).toLocaleDateString(DEFAULT_LOCALE)} - ${new Date(bookingForm.check_out_date).toLocaleDateString(DEFAULT_LOCALE)}
+        - Total: Rp ${totalPrice.toLocaleString(DEFAULT_LOCALE)}
         
         Silakan transfer ke:
         ${BANK_ACCOUNT_NUMBER}
@@ -229,14 +229,14 @@ export default function RoomDetailPage() {
     try {
       // Update room status to TEMPORARILY_RESERVED
       const { error } = await supabase
-        .from('rooms')
-        .update({ status: 'TEMPORARILY_RESERVED' })
+        .from(DB_TABLES.ROOMS)
+        .update({ status: ROOM_STATUS.TEMPORARILY_RESERVED })
         .eq('id', roomId);
 
       if (error) throw error;
 
       // Update local state
-      setRoom({ ...room, status: 'TEMPORARILY_RESERVED' });
+      setRoom({ ...room, status: ROOM_STATUS.TEMPORARILY_RESERVED });
       
       // Show chat room
       setShowChatRoom(true);
@@ -249,7 +249,7 @@ export default function RoomDetailPage() {
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('id-ID', {
+    return new Intl.NumberFormat(DEFAULT_LOCALE, {
       style: 'currency',
       currency: 'IDR',
       minimumFractionDigits: 0,
@@ -361,7 +361,7 @@ export default function RoomDetailPage() {
                     {room.quota > 0 ? `${room.quota} Tersedia` : 'Penuh'}
                   </Badge>
                   <Badge variant="outline" className="border-blue-200 text-blue-700">
-                    {room.status === 'AVAILABLE' ? '✅ Tersedia' : '⏳ Sementara Dipesan'}
+                    {room.status === ROOM_STATUS.AVAILABLE ? '✅ Tersedia' : '⏳ Sementara Dipesan'}
                   </Badge>
                 </div>
               </div>
@@ -714,7 +714,7 @@ export default function RoomDetailPage() {
                   </Dialog>
 
                   {/* Tanya Admin Button */}
-                  {room.status === 'AVAILABLE' && (
+                  {room.status === ROOM_STATUS.AVAILABLE && (
                     <Button 
                       onClick={handleSoftBooking}
                       variant="outline"

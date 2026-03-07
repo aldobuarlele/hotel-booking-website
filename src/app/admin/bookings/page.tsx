@@ -8,6 +8,9 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { supabase } from '@/lib/supabase';
 import { Calendar, User, Mail, Phone, DollarSign, CheckCircle, XCircle, Plus, Loader2, Clock, CreditCard } from 'lucide-react';
 import { BANK_ACCOUNT_NUMBER } from '@/lib/config';
+import { DB_TABLES } from '@/lib/config';
+import { DEFAULT_LOCALE } from '@/lib/config';
+import { ROOM_STATUS } from '@/lib/config';
 
 type Booking = {
   id: number;
@@ -72,7 +75,7 @@ export default function BookingManagementPage() {
   const fetchBookings = async () => {
     try {
       const { data, error } = await supabase
-        .from('bookings')
+        .from(DB_TABLES.BOOKINGS)
         .select(`
           *,
           rooms (
@@ -94,9 +97,9 @@ export default function BookingManagementPage() {
   const fetchRooms = async () => {
     try {
       const { data, error } = await supabase
-        .from('rooms')
+        .from(DB_TABLES.ROOMS)
         .select('id, name, price, quota')
-        .eq('status', 'AVAILABLE');
+        .eq('status', ROOM_STATUS.AVAILABLE);
 
       if (error) throw error;
       setRooms(data || []);
@@ -139,7 +142,7 @@ export default function BookingManagementPage() {
     try {
       // Query bookings for the same room that overlap with the selected dates
       const { data, error } = await supabase
-        .from('bookings')
+        .from(DB_TABLES.BOOKINGS)
         .select('id')
         .eq('room_id', roomId)
         .or(`and(check_in_date.lte.${checkOutDate},check_out_date.gte.${checkInDate})`);
@@ -205,7 +208,7 @@ export default function BookingManagementPage() {
       };
 
       const { error } = await supabase
-        .from('bookings')
+        .from(DB_TABLES.BOOKINGS)
         .insert(bookingData);
 
       if (error) throw error;
@@ -246,7 +249,7 @@ export default function BookingManagementPage() {
 
     try {
       const { error } = await supabase
-        .from('bookings')
+        .from(DB_TABLES.BOOKINGS)
         .update({ payment_status: newStatus })
         .eq('id', bookingId);
 
@@ -262,7 +265,7 @@ export default function BookingManagementPage() {
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('id-ID', {
+    return new Intl.NumberFormat(DEFAULT_LOCALE, {
       style: 'currency',
       currency: 'IDR',
       minimumFractionDigits: 0,
@@ -270,7 +273,7 @@ export default function BookingManagementPage() {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('id-ID', {
+    return new Date(dateString).toLocaleDateString(DEFAULT_LOCALE, {
       day: 'numeric',
       month: 'short',
       year: 'numeric',
