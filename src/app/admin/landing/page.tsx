@@ -155,7 +155,7 @@ export default function LandingPageEditor() {
       setIsDialogOpen(false);
       
       showSuccessToast(isEditing ? 'Konten berhasil diperbarui' : 'Konten baru berhasil ditambahkan');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error saving landing page content:', error);
       showErrorToast(error, 'Gagal menyimpan konten');
     } finally {

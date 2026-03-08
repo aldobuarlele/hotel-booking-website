@@ -31,9 +31,9 @@ export default function AdminLoginPage() {
 
       // Successfully logged in, redirect to admin dashboard
       router.push('/admin');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Login error:', error);
-      setError(error.message || 'Login gagal. Periksa email dan password Anda.');
+      setError((error instanceof Error) ? error.message : 'Login gagal. Periksa email dan password Anda.');
     } finally {
       setLoading(false);
     }

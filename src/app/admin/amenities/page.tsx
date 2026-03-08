@@ -145,7 +145,7 @@ export default function AmenitiesPage() {
       setIsDialogOpen(false);
       
       showSuccessToast(isEditing ? 'Fasilitas berhasil diperbarui' : 'Fasilitas baru berhasil ditambahkan');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error saving amenity:', error);
       showErrorToast(error, 'Gagal menyimpan fasilitas');
     } finally {

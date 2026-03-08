@@ -574,7 +574,14 @@ export default function RoomDetailPage() {
                           value={bookingForm.check_out_date}
                           onChange={handleDateChange}
                           className="rounded-xl border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                          min={bookingForm.check_in_date || new Date().toISOString().split('T')[0]}
+                          min={(() => {
+                            if (!bookingForm.check_in_date) {
+                              return new Date().toISOString().split('T')[0];
+                            }
+                            const nextDay = new Date(bookingForm.check_in_date);
+                            nextDay.setDate(nextDay.getDate() + 1);
+                            return nextDay.toISOString().split('T')[0];
+                          })()}
                         />
                       </div>
                     </div>

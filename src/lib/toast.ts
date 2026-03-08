@@ -31,8 +31,8 @@ export const toastInfo = (message: string) => {
 };
 
 // Convenience function for common error messages
-export const showErrorToast = (error: any, defaultMessage = "Terjadi kesalahan") => {
-  const message = error?.message || defaultMessage;
+export const showErrorToast = (error: unknown, defaultMessage = "Terjadi kesalahan") => {
+  const message = (error instanceof Error) ? error.message : defaultMessage;
   toastError(message);
 };
 

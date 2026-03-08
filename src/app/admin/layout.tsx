@@ -24,18 +24,14 @@ export default function AdminLayout({
         // Jika session tidak ada dan pathname bukan /admin/login, redirect ke login
         if (!session && pathname !== '/admin/login') {
           router.push('/admin/login');
-          return;
-        }
-
-        // Jika sudah di halaman login dan session ada, redirect ke admin dashboard
-        if (session && pathname === '/admin/login') {
+        } else if (session && pathname === '/admin/login') {
+          // Jika sudah di halaman login dan session ada, redirect ke admin dashboard
           router.push('/admin');
-          return;
         }
-
-        setIsAuthLoading(false);
       } catch (error) {
         console.error('Auth check error:', error);
+      } finally {
+        // Pastikan loading berhenti apa pun hasilnya
         setIsAuthLoading(false);
       }
     };
@@ -48,6 +44,7 @@ export default function AdminLayout({
         if (!session && pathname !== '/admin/login') {
           router.push('/admin/login');
         }
+        // Tidak perlu set loading di sini karena hanya untuk perubahan real-time
       }
     );
 

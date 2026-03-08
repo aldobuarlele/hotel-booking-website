@@ -252,9 +252,10 @@ export default function RoomManagementPage() {
       setPreviewUrl('');
       
       alert(isEditing ? 'Kamar berhasil diperbarui!' : 'Kamar baru berhasil ditambahkan!');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error saving room:', error);
-      alert(`Gagal menyimpan kamar: ${error.message || 'Silakan coba lagi.'}`);
+      const errorMessage = (error instanceof Error) ? error.message : 'Silakan coba lagi.';
+      alert(`Gagal menyimpan kamar: ${errorMessage}`);
     } finally {
       setUploading(false);
     }

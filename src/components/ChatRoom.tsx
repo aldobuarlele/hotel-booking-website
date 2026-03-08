@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { getOrCreateAnonymousUserId } from '@/lib/utils';
 import { DEFAULT_LOCALE, DB_TABLES, ERROR_MESSAGES } from '@/lib/config';
@@ -31,6 +31,27 @@ export default function ChatRoom({ roomId, roomName, onClose }: ChatRoomProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [userId] = useState(() => getOrCreateAnonymousUserId());
 
+  const fetchMessages = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from(DB_TABLES.CHAT_MESSAGES)
+        .select('*')
+        .eq('room_id', roomId)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+      setMessages(data || []);
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [roomId]);
+
+  const scrollToBottom = useCallback(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, []);
+
   // Subscribe to real-time messages
   useEffect(() => {
     fetchMessages();
@@ -55,29 +76,12 @@ export default function ChatRoom({ roomId, roomName, onClose }: ChatRoomProps) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [roomId, userId]);
+  }, [roomId, userId, fetchMessages]);
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
-
-  const fetchMessages = async () => {
-    try {
-      const { data, error } = await supabase
-        .from(DB_TABLES.CHAT_MESSAGES)
-        .select('*')
-        .eq('room_id', roomId)
-        .order('created_at', { ascending: true });
-
-      if (error) throw error;
-      setMessages(data || []);
-    } catch (error) {
-      console.error('Error fetching messages:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [messages, scrollToBottom]);
 
   const sendMessage = async () => {
     if (!newMessage.trim()) return;
@@ -103,10 +107,6 @@ export default function ChatRoom({ roomId, roomName, onClose }: ChatRoomProps) {
     } finally {
       setSending(false);
     }
-  };
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
   const formatTime = (dateString: string) => {
