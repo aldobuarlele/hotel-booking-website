@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -8,6 +9,9 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { supabase } from '@/lib/supabase';
 import { Hotel, Plus, Edit, Trash2, Upload, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { MAX_FILE_SIZE_BYTES, VALID_FILE_TYPES, MAX_FILE_SIZE_MB, DB_TABLES, DEFAULT_LOCALE, ROOM_STATUS, SUPABASE_BUCKETS } from '@/lib/config';
+import 'react-quill/dist/quill.snow.css';
+
+const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
 
 type Room = {
   id: number;
@@ -31,6 +35,8 @@ type RoomFormData = {
 
 export default function RoomManagementPage() {
   const [rooms, setRooms] = useState<Room[]>([]);
+  const [amenities, setAmenities] = useState<any[]>([]);
+  const [selectedAmenities, setSelectedAmenities] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -45,9 +51,10 @@ export default function RoomManagementPage() {
   const [uploading, setUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string>('');
 
-  // Fetch rooms from Supabase
+  // Fetch rooms and amenities from Supabase
   useEffect(() => {
     fetchRooms();
+    fetchAmenities();
   }, []);
 
   const fetchRooms = async () => {
@@ -66,9 +73,52 @@ export default function RoomManagementPage() {
     }
   };
 
+  const fetchAmenities = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('amenities')
+        .select('*')
+        .order('name', { ascending: true });
+
+      if (error) throw error;
+      setAmenities(data || []);
+    } catch (error) {
+      console.error('Error fetching amenities:', error);
+    }
+  };
+
+  const fetchRoomAmenities = async (roomId: number) => {
+    try {
+      const { data, error } = await supabase
+        .from('room_amenities')
+        .select('amenity_id')
+        .eq('room_id', roomId);
+
+      if (error) throw error;
+      const amenityIds = data?.map(item => item.amenity_id) || [];
+      setSelectedAmenities(amenityIds);
+    } catch (error) {
+      console.error('Error fetching room amenities:', error);
+    }
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleDescriptionChange = (value: string) => {
+    setFormData(prev => ({ ...prev, description: value }));
+  };
+
+  const handleAmenityToggle = (amenityId: number) => {
+    setSelectedAmenities(prev => {
+      if (prev.includes(amenityId)) {
+        return prev.filter(id => id !== amenityId);
+      } else {
+        return [...prev, amenityId];
+      }
+    });
   };
 
   const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -119,6 +169,7 @@ export default function RoomManagementPage() {
   const handleOpenCreateDialog = () => {
     setIsEditing(false);
     setCurrentRoom(null);
+    setSelectedAmenities([]);
     setFormData({
       name: '',
       description: '',
@@ -130,7 +181,7 @@ export default function RoomManagementPage() {
     setIsDialogOpen(true);
   };
 
-  const handleOpenEditDialog = (room: Room) => {
+  const handleOpenEditDialog = async (room: Room) => {
     setIsEditing(true);
     setCurrentRoom(room);
     setFormData({
@@ -142,6 +193,9 @@ export default function RoomManagementPage() {
     });
     setPreviewUrl(room.photo_path || '');
     setIsDialogOpen(true);
+    
+    // Fetch room amenities for editing
+    await fetchRoomAmenities(room.id);
   };
 
   const handleSubmit = async () => {
@@ -218,6 +272,8 @@ export default function RoomManagementPage() {
 
       console.log('Saving room data:', roomData);
 
+      let savedRoomId: number;
+
       if (isEditing && currentRoom) {
         // Update existing room
         const { data, error } = await supabase
@@ -228,6 +284,7 @@ export default function RoomManagementPage() {
 
         if (error) throw error;
         console.log('Update successful:', data);
+        savedRoomId = currentRoom.id;
       } else {
         // Create new room
         const { data, error } = await supabase
@@ -237,11 +294,44 @@ export default function RoomManagementPage() {
 
         if (error) throw error;
         console.log('Create successful:', data);
+        savedRoomId = data?.[0]?.id;
+      }
+
+      // Handle room_amenities
+      if (savedRoomId) {
+        // Delete existing room_amenities for this room (for both edit and create to ensure clean state)
+        const { error: deleteError } = await supabase
+          .from('room_amenities')
+          .delete()
+          .eq('room_id', savedRoomId);
+
+        if (deleteError) {
+          console.error('Error deleting room amenities:', deleteError);
+          // Continue with insert, don't throw
+        }
+
+        // Insert selected amenities if any
+        if (selectedAmenities.length > 0) {
+          const roomAmenitiesData = selectedAmenities.map(amenityId => ({
+            room_id: savedRoomId,
+            amenity_id: amenityId
+          }));
+
+          const { error: insertError } = await supabase
+            .from('room_amenities')
+            .insert(roomAmenitiesData);
+
+          if (insertError) {
+            console.error('Error inserting room amenities:', insertError);
+            // Continue, don't throw - amenities are secondary
+          }
+        }
       }
 
       // Refresh rooms list
       await fetchRooms();
       setIsDialogOpen(false);
+      setSelectedAmenities([]);
       setFormData({
         name: '',
         description: '',
@@ -329,12 +419,11 @@ export default function RoomManagementPage() {
 
               <div className="grid gap-2">
                 <label htmlFor="description" className="text-sm font-medium">Deskripsi</label>
-                <textarea
-                  id="description"
-                  name="description"
+                <ReactQuill
+                  theme="snow"
                   value={formData.description}
-                  onChange={handleInputChange}
-                  className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  onChange={handleDescriptionChange}
+                  className="bg-white"
                   placeholder="Deskripsi fasilitas kamar..."
                 />
               </div>
@@ -364,6 +453,33 @@ export default function RoomManagementPage() {
                   />
                   <p className="text-xs text-gray-500">Minimal 0 (tidak boleh minus)</p>
                 </div>
+              </div>
+
+              {/* Fasilitas Kamar */}
+              <div className="grid gap-2">
+                <label className="text-sm font-medium">Fasilitas Kamar</label>
+                <div className="grid grid-cols-2 gap-3">
+                  {amenities.map((amenity) => (
+                    <div key={amenity.id} className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id={`amenity-${amenity.id}`}
+                        checked={selectedAmenities.includes(amenity.id)}
+                        onChange={() => handleAmenityToggle(amenity.id)}
+                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <label
+                        htmlFor={`amenity-${amenity.id}`}
+                        className="text-sm text-gray-700 cursor-pointer"
+                      >
+                        {amenity.name}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+                {amenities.length === 0 && (
+                  <p className="text-xs text-gray-500">Belum ada fasilitas yang didefinisikan. Tambahkan fasilitas di halaman Fasilitas.</p>
+                )}
               </div>
 
               <div className="grid gap-2">

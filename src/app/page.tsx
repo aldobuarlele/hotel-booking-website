@@ -1,6 +1,7 @@
 'use client';
 
 import { DB_TABLES, DEFAULT_LOCALE, ROOM_STATUS } from '@/lib/config';
+import { getGlobalSettings, getLandingPageContent } from '@/lib/cms';
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -27,28 +28,39 @@ type Room = {
 export default function HomePage() {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState(true);
+  const [globalSettings, setGlobalSettings] = useState<any>(null);
+  const [heroContent, setHeroContent] = useState<any>(null);
   const [searchDates, setSearchDates] = useState({
     checkIn: '',
     checkOut: '',
   });
 
   useEffect(() => {
-    fetchRooms();
+    fetchData();
   }, []);
 
-  const fetchRooms = async () => {
+  const fetchData = async () => {
     try {
-      const { data, error } = await supabase
+      // Fetch rooms
+      const { data: roomsData, error: roomsError } = await supabase
         .from(DB_TABLES.ROOMS)
         .select('*')
         .eq('status', ROOM_STATUS.AVAILABLE)
         .gt('quota', 0)
         .order('price', { ascending: true });
 
-      if (error) throw error;
-      setRooms(data || []);
+      if (roomsError) throw roomsError;
+      setRooms(roomsData || []);
+
+      // Fetch global settings
+      const settings = await getGlobalSettings();
+      setGlobalSettings(settings);
+
+      // Fetch hero content
+      const hero = await getLandingPageContent('HERO');
+      setHeroContent(hero);
     } catch (error) {
-      console.error('Error fetching rooms:', error);
+      console.error('Error fetching data:', error);
     } finally {
       setLoading(false);
     }
@@ -85,11 +97,11 @@ export default function HomePage() {
           <div className="max-w-4xl mx-auto text-center w-full">
             {/* Judul Hero */}
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
-              Temukan Pengalaman <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-300 to-cyan-300">Menginap Terbaik</span>
+              {heroContent?.title || 'Temukan Pengalaman <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-300 to-cyan-300">Menginap Terbaik</span>'}
             </h1>
             
             <p className="text-lg text-blue-200 max-w-2xl mx-auto mb-10">
-              Jelajahi koleksi kamar eksklusif dengan fasilitas premium dan layanan bintang lima.
+              {heroContent?.subtitle || 'Jelajahi koleksi kamar eksklusif dengan fasilitas premium dan layanan bintang lima.'}
             </p>
           </div>
         </div>
@@ -281,10 +293,10 @@ export default function HomePage() {
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">
               <Hotel className="h-6 w-6 text-blue-400" />
-              <span className="text-xl font-bold">LuxuryStay</span>
+              <span className="text-xl font-bold">{globalSettings?.hotel_name || 'LuxuryStay'}</span>
             </div>
             <div className="text-gray-400 text-center text-sm">
-              <p>© 2024 LuxuryStay. All rights reserved.</p>
+              <p>© 2024 {globalSettings?.hotel_name || 'LuxuryStay'}. All rights reserved.</p>
               <p className="mt-1">Platform booking hotel premium</p>
             </div>
           </div>

@@ -8,7 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { supabase } from '@/lib/supabase';
-import { BANK_ACCOUNT_NUMBER, DB_TABLES, DEFAULT_LOCALE, ROOM_STATUS } from '@/lib/config';
+import { getGlobalSettings, getRoomAmenities } from '@/lib/cms';
+import { DB_TABLES, DEFAULT_LOCALE, ROOM_STATUS } from '@/lib/config';
 import { toastError, toastSuccess, toastWarning, toastInfo } from '@/lib/toast';
 import { 
   Hotel, Star, MapPin, Calendar, Users, ArrowLeft, Loader2, Check, 
@@ -17,6 +18,7 @@ import {
   Shield, Clock, Award, Heart, Bed, Bath, Thermometer,
   Maximize, Eye, Share2, Bookmark
 } from 'lucide-react';
+import * as Icons from 'lucide-react';
 import Link from 'next/link';
 import ChatRoom from '@/components/ChatRoom';
 
@@ -38,6 +40,25 @@ type BookingFormData = {
   check_out_date: string;
 };
 
+type Amenity = {
+  id: number;
+  name: string;
+  icon_name: string;
+  created_at: string;
+};
+
+type GlobalSettings = {
+  id: number;
+  app_name: string;
+  hotel_name: string;
+  bank_account_number: string;
+  max_file_size_mb: number;
+  currency: string;
+  contact_email: string | null;
+  contact_phone: string | null;
+  updated_at: string;
+};
+
 export default function RoomDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -45,6 +66,8 @@ export default function RoomDetailPage() {
   
   const [room, setRoom] = useState<Room | null>(null);
   const [loading, setLoading] = useState(true);
+  const [amenities, setAmenities] = useState<Amenity[]>([]);
+  const [globalSettings, setGlobalSettings] = useState<GlobalSettings | null>(null);
   const [isBookingDialogOpen, setIsBookingDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showChatRoom, setShowChatRoom] = useState(false);
@@ -61,7 +84,7 @@ export default function RoomDetailPage() {
 
   useEffect(() => {
     if (roomId) {
-      fetchRoom();
+      fetchRoomData();
     }
   }, [roomId]);
 
@@ -75,18 +98,28 @@ export default function RoomDetailPage() {
     }
   }, [bookingForm.check_in_date, bookingForm.check_out_date, room]);
 
-  const fetchRoom = async () => {
+  const fetchRoomData = async () => {
     try {
-      const { data, error } = await supabase
+      // Fetch room details
+      const { data: roomData, error: roomError } = await supabase
         .from(DB_TABLES.ROOMS)
         .select('*')
         .eq('id', roomId)
         .single();
 
-      if (error) throw error;
-      setRoom(data);
+      if (roomError) throw roomError;
+      setRoom(roomData);
+
+      // Fetch amenities
+      const roomAmenities = await getRoomAmenities(roomId!);
+      const amenitiesList = roomAmenities.map((item) => item.amenities);
+      setAmenities(amenitiesList);
+
+      // Fetch global settings
+      const settings = await getGlobalSettings();
+      setGlobalSettings(settings);
     } catch (error) {
-      console.error('Error fetching room:', error);
+      console.error('Error fetching room data:', error);
       setRoom(null);
     } finally {
       setLoading(false);
@@ -199,6 +232,8 @@ export default function RoomDetailPage() {
         check_out_date: '',
       });
 
+      const bankAccount = globalSettings?.bank_account_number || 'BCA 1234567890 a.n. Hotel Booking';
+      
       toastSuccess(
         `Booking berhasil dibuat!\n\n` +
         `Detail Booking:\n` +
@@ -206,7 +241,7 @@ export default function RoomDetailPage() {
         `- Kamar: ${room.name}\n` +
         `- Tanggal: ${new Date(bookingForm.check_in_date).toLocaleDateString(DEFAULT_LOCALE)} - ${new Date(bookingForm.check_out_date).toLocaleDateString(DEFAULT_LOCALE)}\n` +
         `- Total: Rp ${totalPrice.toLocaleString(DEFAULT_LOCALE)}\n\n` +
-        `Silakan transfer ke:\n${BANK_ACCOUNT_NUMBER}\n\n` +
+        `Silakan transfer ke:\n${bankAccount}\n\n` +
         `Konfirmasi pembayaran akan diproses dalam 1x24 jam.`
       );
 
@@ -265,7 +300,8 @@ export default function RoomDetailPage() {
     'https://images.unsplash.com/photo-1566665797739-1674de7a421a?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80',
   ];
 
-  const facilityIcons = [
+  // Default facilities if no amenities from database
+  const defaultFacilities = [
     { icon: Wifi, label: 'WiFi Gratis' },
     { icon: Tv, label: 'TV LED 42"' },
     { icon: Wind, label: 'AC' },
@@ -279,6 +315,34 @@ export default function RoomDetailPage() {
     { icon: Thermometer, label: 'Heating' },
     { icon: Shield, label: 'Safe Deposit Box' },
   ];
+
+  // Get Lucide icon component by name
+  const getIconByName = (iconName: string) => {
+    const iconMap: { [key: string]: any } = {
+      'wifi': Wifi,
+      'tv': Tv,
+      'wind': Wind,
+      'droplets': Droplets,
+      'coffee': Coffee,
+      'bed': Bed,
+      'bath': Bath,
+      'car': Car,
+      'dumbbell': Dumbbell,
+      'utensils': Utensils,
+      'thermometer': Thermometer,
+      'shield': Shield,
+      'star': Star,
+      'users': Users,
+      'calendar': Calendar,
+      'clock': Clock,
+      'award': Award,
+      'heart': Heart,
+      'maximize': Maximize,
+    };
+    
+    const IconComponent = iconMap[iconName.toLowerCase()] || Wifi;
+    return <IconComponent className="h-5 w-5 text-blue-600" />;
+  };
 
   if (loading) {
     return (
@@ -325,7 +389,7 @@ export default function RoomDetailPage() {
               <div className="bg-blue-600 p-2 rounded-lg">
                 <Hotel className="h-6 w-6 text-white" />
               </div>
-              <span className="font-bold text-gray-900">LuxuryStay</span>
+              <span className="font-bold text-gray-900">{globalSettings?.hotel_name || 'LuxuryStay'}</span>
             </div>
           </div>
         </div>
@@ -396,9 +460,16 @@ export default function RoomDetailPage() {
                 <CardTitle className="text-2xl">Deskripsi Kamar</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-700 leading-relaxed text-lg">
-                  {room.description || 'Kamar mewah dengan desain modern yang menawarkan kenyamanan maksimal. Dilengkapi dengan tempat tidur king size, kamar mandi pribadi dengan bathtub, dan pemandangan kota yang menakjubkan. Ruangan yang luas dan pencahayaan alami menciptakan atmosfer yang sempurna untuk relaksasi.'}
-                </p>
+                {room.description ? (
+                  <div 
+                    dangerouslySetInnerHTML={{ __html: room.description }} 
+                    className="prose max-w-none text-gray-700 leading-relaxed text-lg"
+                  />
+                ) : (
+                  <p className="text-gray-700 leading-relaxed text-lg">
+                    Kamar mewah dengan desain modern yang menawarkan kenyamanan maksimal. Dilengkapi dengan tempat tidur king size, kamar mandi pribadi dengan bathtub, dan pemandangan kota yang menakjubkan. Ruangan yang luas dan pencahayaan alami menciptakan atmosfer yang sempurna untuk relaksasi.
+                  </p>
+                )}
                 
                 {/* Room Specs */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-8">
@@ -442,14 +513,25 @@ export default function RoomDetailPage() {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                  {facilityIcons.map(({ icon: Icon, label }, index) => (
-                    <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors">
-                      <div className="bg-white p-2 rounded-lg">
-                        <Icon className="h-5 w-5 text-blue-600" />
+                  {amenities.length > 0 ? (
+                    amenities.map((amenity, index) => (
+                      <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors">
+                        <div className="bg-white p-2 rounded-lg">
+                          {getIconByName(amenity.icon_name)}
+                        </div>
+                        <span className="font-medium">{amenity.name}</span>
                       </div>
-                      <span className="font-medium">{label}</span>
-                    </div>
-                  ))}
+                    ))
+                  ) : (
+                    defaultFacilities.map(({ icon: Icon, label }, index) => (
+                      <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors">
+                        <div className="bg-white p-2 rounded-lg">
+                          <Icon className="h-5 w-5 text-blue-600" />
+                        </div>
+                        <span className="font-medium">{label}</span>
+                      </div>
+                    ))
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -691,7 +773,9 @@ export default function RoomDetailPage() {
                             Setelah submit, silakan transfer ke rekening berikut:
                           </p>
                           <div className="bg-white p-3 rounded-lg border border-blue-200">
-                            <div className="font-mono text-center font-bold">{BANK_ACCOUNT_NUMBER}</div>
+                            <div className="font-mono text-center font-bold">
+                              {globalSettings?.bank_account_number || 'BCA 1234567890 a.n. Hotel Booking'}
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -764,7 +848,9 @@ export default function RoomDetailPage() {
                       <p className="text-sm text-gray-600 mb-3">
                         Tim customer service kami siap membantu 24/7
                       </p>
-                      <div className="font-bold text-blue-700">021-8888-9999</div>
+                      <div className="font-bold text-blue-700">
+                        {globalSettings?.contact_phone || '021-8888-9999'}
+                      </div>
                     </div>
                   </div>
                 </CardContent>
