@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Home, Hotel, CalendarDays, MessageSquare, LogOut } from 'lucide-react';
+import { Home, Hotel, CalendarDays, MessageSquare, LogOut, Settings, Globe, Wifi } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -99,6 +99,9 @@ export default function AdminLayout({
           <SidebarLink href="/admin/rooms" icon={<Hotel size={20} />} label="Manajemen Kamar" />
           <SidebarLink href="/admin/bookings" icon={<CalendarDays size={20} />} label="Manajemen Reservasi" />
           <SidebarLink href="/admin/chats" icon={<MessageSquare size={20} />} label="Live Chat" />
+          <SidebarLink href="/admin/settings" icon={<Settings size={20} />} label="Pengaturan Global" />
+          <SidebarLink href="/admin/landing" icon={<Globe size={20} />} label="Landing Page" />
+          <SidebarLink href="/admin/amenities" icon={<Wifi size={20} />} label="Fasilitas Kamar" />
         </nav>
         
         <div className="pt-6 border-t border-gray-200">
