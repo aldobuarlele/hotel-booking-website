@@ -25,6 +25,13 @@ type Room = {
   status: 'AVAILABLE' | 'TEMPORARILY_RESERVED' | 'INQUIRY_ONLY';
 };
 
+// Helper function to clean HTML from database (replace className with class for proper HTML rendering)
+const cleanHtmlForRender = (html: string): string => {
+  if (!html) return '';
+  // Replace className with class for HTML compatibility
+  return html.replace(/className=/g, 'class=');
+};
+
 export default function HomePage() {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState(true);
@@ -97,12 +104,24 @@ export default function HomePage() {
           <div className="max-w-4xl mx-auto text-center w-full">
             {/* Judul Hero */}
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
-              {heroContent?.title || 'Temukan Pengalaman <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-300 to-cyan-300">Menginap Terbaik</span>'}
+              {heroContent?.title ? (
+                <div dangerouslySetInnerHTML={{ __html: cleanHtmlForRender(heroContent.title) }} />
+              ) : (
+                <>
+                  Temukan Pengalaman{' '}
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-300 to-cyan-300">Menginap Terbaik</span>
+                </>
+              )}
             </h1>
             
-            <p className="text-lg text-blue-200 max-w-2xl mx-auto mb-10">
-              {heroContent?.subtitle || 'Jelajahi koleksi kamar eksklusif dengan fasilitas premium dan layanan bintang lima.'}
-            </p>
+            {/* Subtitle Hero */}
+            <div className="text-lg text-blue-200 max-w-2xl mx-auto mb-10">
+              {heroContent?.subtitle ? (
+                <div dangerouslySetInnerHTML={{ __html: cleanHtmlForRender(heroContent.subtitle) }} />
+              ) : (
+                'Jelajahi koleksi kamar eksklusif dengan fasilitas premium dan layanan bintang lima.'
+              )}
+            </div>
           </div>
         </div>
         
