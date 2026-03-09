@@ -9,6 +9,8 @@ export type GlobalSettings = {
   currency: string;
   contact_email: string | null;
   contact_phone: string | null;
+  meta_title: string | null;
+  meta_description: string | null;
   updated_at: string;
 };
 

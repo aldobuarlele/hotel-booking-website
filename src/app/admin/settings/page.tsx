@@ -18,6 +18,8 @@ type GlobalSettings = {
   currency: string;
   contact_email: string | null;
   contact_phone: string | null;
+  meta_title: string | null;
+  meta_description: string | null;
   updated_at: string;
 };
 
@@ -52,7 +54,7 @@ export default function GlobalSettingsPage() {
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
@@ -82,6 +84,8 @@ export default function GlobalSettingsPage() {
           currency: formData.currency,
           contact_email: formData.contact_email || null,
           contact_phone: formData.contact_phone || null,
+          meta_title: formData.meta_title || null,
+          meta_description: formData.meta_description || null,
         })
         .eq('id', 1);
 
@@ -225,6 +229,42 @@ export default function GlobalSettingsPage() {
               />
               <p className="text-xs text-gray-500">
                 Format: Nama Bank NomorRekening a.n. Pemilik Rekening
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle>Pengaturan SEO & Metadata</CardTitle>
+            <CardDescription>Optimalkan SEO website untuk mesin pencari dan media sosial</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="meta_title">Meta Title</Label>
+              <Input
+                id="meta_title"
+                name="meta_title"
+                value={formData.meta_title || ''}
+                onChange={handleInputChange}
+                placeholder="Villa Buarlele | Pengalaman Menginap Terbaik"
+              />
+              <p className="text-xs text-gray-500">
+                Judul yang muncul di tab browser dan hasil pencarian Google (disarankan 50-60 karakter)
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="meta_description">Meta Description</Label>
+              <textarea
+                id="meta_description"
+                name="meta_description"
+                value={formData.meta_description || ''}
+                onChange={handleInputChange}
+                className="flex min-h-[120px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                placeholder="Platform booking hotel premium dengan koleksi akomodasi terbaik, layanan pelanggan 24/7, dan pengalaman menginap yang tak terlupakan"
+              />
+              <p className="text-xs text-gray-500">
+                Deskripsi singkat yang muncul di hasil pencarian Google dan WhatsApp share (disarankan 150-160 karakter)
               </p>
             </div>
           </CardContent>
