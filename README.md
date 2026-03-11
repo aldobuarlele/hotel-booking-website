@@ -7,11 +7,6 @@
 
 A modern hotel booking management system with real-time chat support, overbooking prevention, and secure administration dashboard. Built with Next.js, Supabase, and Tailwind CSS.
 
-## Overview
-
-The Hotel Booking System provides comprehensive reservation management with dual booking modes: Hard Booking for confirmed reservations and Real-time Soft Booking (Inquiry Chat) for customer inquiries. The system includes separate interfaces for customers and administrators with robust authentication and real-time communication capabilities.
-
-
 ## Key Features
 
 - **Real-time Chat System**: Built on Supabase Realtime Channels for instant customer-administrator communication
@@ -20,6 +15,10 @@ The Hotel Booking System provides comprehensive reservation management with dual
 - **Secure Admin Dashboard**: Role-based authentication with client-side session management
 - **Dual Booking Modes**: Hard Booking (confirmed reservations) and Soft Booking (inquiry chat)
 - **Responsive UI**: Mobile-first design with Tailwind CSS and Shadcn components
+
+## Overview
+
+The Hotel Booking System provides comprehensive reservation management with dual booking modes: Hard Booking for confirmed reservations and Real-time Soft Booking (Inquiry Chat) for customer inquiries. The system includes separate interfaces for customers and administrators with robust authentication and real-time communication capabilities.
 
 
 ## Architecture
