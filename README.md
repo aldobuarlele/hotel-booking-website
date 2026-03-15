@@ -57,12 +57,6 @@ graph TB
 
 ## Getting Started
 
-### Prerequisites
-
-- Node.js 18+ and npm/yarn/pnpm
-- Supabase account and project
-- PostgreSQL database (provided by Supabase)
-
 ## Tech Stack
 
 | Technology | Purpose | Version |
@@ -74,6 +68,12 @@ graph TB
 | **TypeScript** | Type-safe JavaScript development | 5.0 |
 | **Shadcn/ui** | Accessible component library | Latest |
 | **React** | UI library for component-based architecture | 18.2 |
+
+### Prerequisites
+
+- Node.js 18+ and npm/yarn/pnpm
+- Supabase account and project
+- PostgreSQL database (provided by Supabase)
 
 
 ### Installation
